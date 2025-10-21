@@ -3,9 +3,29 @@ import JoditEditor, { IJoditEditorProps } from 'jodit-react';
 import { importWordDocument, exportToWord } from './utils/wordUtils';
 import './App.css';
 
-function App({ placeholder }: { placeholder?: string }) {
+export interface WordEditorProps {
+  placeholder?: string;
+  initialContent?: string;
+  height?: number;
+  showHeader?: boolean;
+  title?: string;
+  subtitle?: string;
+  onChange?: (content: string) => void;
+  className?: string;
+}
+
+function App({
+  placeholder = 'Comece a escrever seu texto...',
+  initialContent = '',
+  height = 600,
+  showHeader = true,
+  title = 'Editor de Texto',
+  subtitle = 'Crie e edite documentos com facilidade',
+  onChange,
+  className = '',
+}: WordEditorProps) {
   const editor = useRef(null);
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(initialContent);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -27,6 +47,7 @@ function App({ placeholder }: { placeholder?: string }) {
     try {
       const htmlContent = await importWordDocument(file);
       setContent(htmlContent);
+      onChange?.(htmlContent);
     } catch (error) {
       alert('Erro ao importar o documento. Tente novamente.');
       console.error(error);
@@ -55,26 +76,33 @@ function App({ placeholder }: { placeholder?: string }) {
     }
   };
 
+  const handleContentChange = (newContent: string) => {
+    setContent(newContent);
+    onChange?.(newContent);
+  };
+
   const config: IJoditEditorProps['config'] = useMemo(
     () => ({
       readonly: false,
-      placeholder: placeholder || 'Comece a escrever seu texto...',
+      placeholder,
       buttons:
         'bold,italic,underline,strikethrough,eraser,ul,ol,font,fontsize,paragraph,classSpan,lineHeight,superscript,subscript,file,image,video,speechRecognize,spellcheck,cut,|,undo,redo,|,align,hr,link,table',
       theme: 'default',
-      height: 600,
+      height,
     }),
-    [placeholder]
+    [placeholder, height]
   );
 
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <div className="header-content">
-          <h1 className="app-title">Editor de Texto</h1>
-          <p className="app-subtitle">Crie e edite documentos com facilidade</p>
-        </div>
-      </header>
+    <div className={`app-container ${className}`}>
+      {showHeader && (
+        <header className="app-header">
+          <div className="header-content">
+            <h1 className="app-title">{title}</h1>
+            <p className="app-subtitle">{subtitle}</p>
+          </div>
+        </header>
+      )}
 
       <main className="editor-wrapper">
         <div className="editor-container">
@@ -106,7 +134,7 @@ function App({ placeholder }: { placeholder?: string }) {
             ref={editor}
             value={content}
             config={config}
-            onBlur={(newContent) => setContent(newContent)}
+            onBlur={handleContentChange}
             onChange={() => {}}
           />
         </div>
